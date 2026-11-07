@@ -1,0 +1,37 @@
+# 放在你自己仓库的 .github/workflows/build-image.yml
+# 每天(北京时间约 04:00)拉上游最新源码构建镜像并推到 Docker Hub
+name: build-image
+
+on:
+  schedule:
+    - cron: "0 20 * * *"   # UTC 20:00 = 北京时间次日 04:00
+  workflow_dispatch:        # 手动触发按钮
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 直接拉上游源码构建, 你的仓库不用同步代码
+      - name: Checkout upstream
+        uses: actions/checkout@v4
+        with:
+          repository: kinopico-zhang/my-tesla
+          ref: main
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-tesla:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-tesla:${{ github.run_number }}
