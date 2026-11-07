@@ -11,12 +11,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 直接拉上游源码构建, 你的仓库不用同步代码
-      - name: Checkout upstream
+      # 第一步: checkout 你自己的仓库 —— 拿到根目录的 Dockerfile
+      - name: Checkout own repo (Dockerfile)
+        uses: actions/checkout@v4
+
+      # 第二步: 上游源码拉到 src/ 子目录
+      - name: Checkout upstream source
         uses: actions/checkout@v4
         with:
           repository: kinopico-zhang/my-tesla
           ref: main
+          path: src
+
+      # 第三步: 把 Dockerfile 拷进构建上下文 (上游本身不带 Dockerfile)
+      - name: Copy Dockerfile into build context
+        run: cp Dockerfile src/Dockerfile
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,7 +39,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./src
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/my-tesla:latest
